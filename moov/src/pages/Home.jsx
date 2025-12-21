@@ -82,16 +82,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white p-6 relative">
+    <div className="min-h-screen bg-[#fafafa] text-[#121212] p-6 relative">
       {/* Profile Button - Top Right */}
       <button
         onClick={handleProfileClick}
-        className="absolute top-6 right-6 p-3 bg-[#1a1a1a] border border-gray-800 rounded-lg hover:bg-[#2a2a2a] hover:border-[#33E1ED] transition-colors focus:outline-none focus:ring-2 focus:ring-[#33E1ED] focus:ring-offset-2 focus:ring-offset-[#121212]"
+        className="absolute top-6 right-6 min-h-[64px] min-w-[64px] p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-[#059669] transition-colors focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 focus:ring-offset-[#fafafa] shadow-sm"
         aria-label="Profile"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6 text-[#33E1ED]"
+          className="h-6 w-6 text-[#059669]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -108,8 +108,8 @@ export default function Home() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-[#33E1ED] mb-2">Welcome Back!</h1>
-          <p className="text-xl text-gray-400">Ready for your daily Moov?</p>
+          <h1 className="text-4xl font-bold text-[#059669] mb-2">Welcome Back!</h1>
+          <p className="text-xl text-gray-600">Ready for your daily Moov?</p>
         </div>
 
         {/* Today's Moov Section */}
@@ -124,16 +124,66 @@ export default function Home() {
               />
             </div>
           ) : (
-            <div className="bg-[#1a1a1a] rounded-lg p-6 border border-gray-800 text-center">
-              <p className="text-gray-400 text-lg mb-4">No workout plan generated yet</p>
+            <div className="bg-white rounded-lg p-6 border border-gray-200 text-center shadow-sm">
+              <p className="text-gray-600 text-lg mb-4">No workout plan generated yet</p>
               <button
                 onClick={loadUserData}
-                className="min-h-[48px] px-6 py-3 bg-[#33E1ED] text-[#121212] font-semibold text-lg rounded-lg hover:bg-[#2AC5D0] transition-colors"
+                className="w-[40%] min-h-[64px] px-6 py-4 bg-[#059669] text-white font-bold text-xl rounded-lg hover:bg-[#047857] active:bg-[#065f46] transition-colors focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 focus:ring-offset-white shadow-lg mx-auto"
+                aria-label="Generate workout plan"
               >
                 Generate Workout Plan
               </button>
             </div>
           )}
+        </section>
+
+        {/* Custom Workout Section */}
+        <section>
+          <div className="bg-gradient-to-r from-[#059669] to-[#047857] rounded-lg p-8 text-white shadow-lg">
+            <h2 className="text-3xl font-bold mb-4">Create Your Own Workout</h2>
+            <p className="text-lg mb-6 text-white/90">
+              Select exercises and customize repetitions to build your perfect workout plan
+            </p>
+            <button
+              onClick={() => navigate('/custom-workout')}
+              className="min-h-[64px] px-8 py-4 bg-white text-[#059669] font-bold text-xl rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors focus:outline-none focus:ring-4 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#059669] shadow-lg"
+              aria-label="Create custom workout"
+            >
+              Customize Workout →
+            </button>
+          </div>
+        </section>
+
+        {/* Featured Workout Plans Section */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Featured Workout Plans</h2>
+            <button
+              onClick={() => navigate('/workout-plans')}
+              className="text-[#059669] hover:text-[#047857] font-semibold text-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#059669] rounded px-2 py-1"
+            >
+              View All →
+            </button>
+          </div>
+          <div className="space-y-4">
+            {workoutPlans
+              .filter(plan => 
+                ['legs_workout', 'arms_workout', 'back_workout', 'abdomen_workout'].includes(plan.id)
+              )
+              .map((plan) => {
+                const planExercises = expandWorkoutPlan(plan, exercises);
+                return (
+                  <WorkoutPlanCard
+                    key={plan.id}
+                    workoutPlan={plan}
+                    exercises={planExercises}
+                    onStart={(exercises) => {
+                      navigate('/workout', { state: { exercises } });
+                    }}
+                  />
+                );
+              })}
+          </div>
         </section>
 
         {/* Progress Section */}

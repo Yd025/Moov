@@ -122,9 +122,9 @@ export default function Workout() {
 
   if (workoutComplete) {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center text-[#121212]">
         <div className="text-center">
-          <h2 className="text-4xl font-bold text-[#33E1ED] mb-4">Workout Complete!</h2>
+          <h2 className="text-4xl font-bold text-[#059669] mb-4">Workout Complete!</h2>
           <p className="text-xl">Redirecting...</p>
         </div>
       </div>
@@ -136,9 +136,9 @@ export default function Workout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white relative overflow-hidden">
+    <div className="min-h-screen bg-[#fafafa] text-[#121212] relative overflow-hidden">
       {/* Camera Feed - TODO: Enable when camera is implemented */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#121212]">
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-white">
         {/* TODO: Uncomment when camera is ready */}
         {/* <CameraFeed
           videoRef={videoRef}
@@ -157,16 +157,17 @@ export default function Workout() {
       <div className="relative z-10 h-screen flex flex-col">
         {/* Top Bar - Counter */}
         <div className="flex justify-between items-start p-6">
-          <div className="bg-[#1a1a1a]/90 backdrop-blur-sm rounded-lg px-6 py-3">
-            <div className="text-sm text-gray-400">Exercise {currentExerciseIndex + 1} of {exercises.length}</div>
-            <div className="text-4xl font-bold text-[#33E1ED]">
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg px-6 py-3 shadow-lg border border-gray-200">
+            <div className="text-sm text-gray-600">Exercise {currentExerciseIndex + 1} of {exercises.length}</div>
+            <div className="text-4xl font-bold text-[#059669]">
               {repCount} / {currentExercise.reps}
             </div>
           </div>
           
           <button
             onClick={handleFinish}
-            className="bg-[#1a1a1a]/90 backdrop-blur-sm rounded-lg px-4 py-2 text-white hover:bg-[#2a2a2a] transition-colors min-h-[48px]"
+            className="bg-white/90 backdrop-blur-sm rounded-lg px-6 py-4 text-[#121212] font-bold text-xl hover:bg-gray-50 active:bg-gray-100 transition-colors min-h-[64px] focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-offset-2 shadow-lg border border-gray-200"
+            aria-label="Finish workout"
           >
             Finish
           </button>
@@ -179,7 +180,8 @@ export default function Workout() {
           {/* TODO: Remove this mock button when pose detection is implemented */}
           <button
             onClick={handleRepComplete}
-            className="min-h-[48px] px-8 py-4 bg-[#33E1ED] text-[#121212] font-bold text-xl rounded-lg hover:bg-[#2AC5D0] transition-colors focus:outline-none focus:ring-2 focus:ring-[#33E1ED] focus:ring-offset-2 focus:ring-offset-[#121212]"
+            className="min-h-[64px] px-8 py-4 bg-[#059669] text-white font-bold text-xl rounded-lg hover:bg-[#047857] active:bg-[#065f46] transition-colors focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 focus:ring-offset-[#fafafa] shadow-lg"
+            aria-label="Complete rep"
           >
             Complete Rep (Mock)
           </button>
@@ -196,7 +198,8 @@ export default function Workout() {
           {showSkipButton && (
             <button
               onClick={handleSkip}
-              className="min-h-[48px] px-8 py-3 bg-red-500 text-white font-bold text-lg rounded-lg hover:bg-red-600 transition-all animate-pulse focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#121212]"
+              className="min-h-[64px] px-8 py-4 bg-red-500 text-white font-bold text-xl rounded-lg hover:bg-red-600 active:bg-red-700 transition-all animate-pulse focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#121212] shadow-lg"
+              aria-label="Skip current move"
             >
               Skip Move
             </button>
@@ -205,10 +208,10 @@ export default function Workout() {
 
         {/* Rest Screen */}
         {isResting && (
-          <div className="absolute inset-0 bg-[#121212]/90 flex items-center justify-center z-20">
+          <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-20">
             <div className="text-center">
-              <h3 className="text-3xl font-bold text-[#33E1ED] mb-4">Rest Time</h3>
-              <p className="text-xl text-gray-400">Take a moment to relax</p>
+              <h3 className="text-3xl font-bold text-[#059669] mb-4">Rest Time</h3>
+              <p className="text-xl text-gray-600">Take a moment to relax</p>
             </div>
           </div>
         )}

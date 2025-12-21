@@ -49,18 +49,18 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md space-y-12 text-center">
         {/* Logo */}
         <div>
-          <h1 className="text-6xl font-bold text-[#33E1ED] mb-2">Moov</h1>
-          <p className="text-xl text-gray-400">Accessible Fitness for Everyone</p>
+          <h1 className="text-6xl font-bold text-[#059669] mb-2">Moov</h1>
+          <p className="text-xl text-gray-600">Accessible Fitness for Everyone</p>
         </div>
 
         {/* Sign In Button */}
         <div className="space-y-4">
           <LoginButton onSignIn={handleSignIn} />
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-600">
             Sign in to track your workouts and progress
           </p>
           <p className="text-xs text-gray-600 mt-4">

@@ -12,14 +12,14 @@ export default function ProgressChart({ progressData }) {
   const maxMobility = Math.max(...data.mobility, 100);
 
   return (
-    <div className="bg-[#1a1a1a] rounded-lg p-6 border border-gray-800">
-      <h3 className="text-xl font-bold text-white mb-6">Your Progress</h3>
+    <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+      <h3 className="text-xl font-bold text-[#121212] mb-6">Your Progress</h3>
 
       {/* Consistency Chart */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-lg font-semibold text-white">Consistency</span>
-          <span className="text-[#33E1ED] text-lg font-bold">
+          <span className="text-lg font-semibold text-[#121212]">Consistency</span>
+          <span className="text-[#059669] text-lg font-bold">
             {data.consistency[data.consistency.length - 1]} days active
           </span>
         </div>
@@ -27,7 +27,7 @@ export default function ProgressChart({ progressData }) {
           {data.consistency.map((value, index) => (
             <div
               key={index}
-              className="flex-1 bg-[#33E1ED] rounded-t transition-all hover:opacity-80"
+              className="flex-1 bg-[#059669] rounded-t transition-all hover:opacity-80"
               style={{
                 height: `${(value / maxConsistency) * 100}%`,
                 minHeight: value > 0 ? '4px' : '0',
@@ -41,8 +41,8 @@ export default function ProgressChart({ progressData }) {
       {/* Mobility Chart */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <span className="text-lg font-semibold text-white">Mobility</span>
-          <span className="text-[#33E1ED] text-lg font-bold">
+          <span className="text-lg font-semibold text-[#121212]">Mobility</span>
+          <span className="text-[#059669] text-lg font-bold">
             {data.mobility[data.mobility.length - 1]}% range
           </span>
         </div>
@@ -50,7 +50,7 @@ export default function ProgressChart({ progressData }) {
           {data.mobility.map((value, index) => (
             <div
               key={index}
-              className="flex-1 bg-[#33E1ED] rounded-t transition-all hover:opacity-80"
+              className="flex-1 bg-[#059669] rounded-t transition-all hover:opacity-80"
               style={{
                 height: `${(value / maxMobility) * 100}%`,
                 minHeight: value > 0 ? '4px' : '0',

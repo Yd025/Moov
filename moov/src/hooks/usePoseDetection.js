@@ -124,7 +124,7 @@ export function usePoseDetection() {
       [24, 26], [26, 28], // Right leg
     ];
 
-    ctx.strokeStyle = formQuality === 'good' ? '#33E1ED' : '#FF4444';
+    ctx.strokeStyle = formQuality === 'good' ? '#059669' : '#FF4444';
     ctx.lineWidth = 3;
 
     connections.forEach(([start, end]) => {
@@ -142,7 +142,7 @@ export function usePoseDetection() {
     // Draw key points
     landmarks.forEach((landmark, index) => {
       if (landmark.visibility > 0.5) {
-        ctx.fillStyle = formQuality === 'good' ? '#33E1ED' : '#FF4444';
+        ctx.fillStyle = formQuality === 'good' ? '#059669' : '#FF4444';
         ctx.beginPath();
         ctx.arc(
           landmark.x * canvasRef.current.width,

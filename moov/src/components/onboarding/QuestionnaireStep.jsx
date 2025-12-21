@@ -29,11 +29,11 @@ export default function QuestionnaireStep({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#121212] text-white">
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#fafafa] text-[#121212]">
       <div className="w-full max-w-md space-y-8">
         {/* Step indicator */}
         <div className="text-center">
-          <span className="text-[#33E1ED] text-lg font-medium">Step {step}</span>
+          <span className="text-[#059669] text-lg font-medium">Step {step}</span>
         </div>
 
         {/* Title */}
@@ -47,16 +47,16 @@ export default function QuestionnaireStep({
             <button
               key={option.value}
               onClick={() => handleSelect(option.value)}
-              className={`w-full min-h-[48px] px-6 py-4 text-left text-lg rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[#33E1ED] focus:ring-offset-2 focus:ring-offset-[#121212] ${
+              className={`w-full min-h-[64px] px-6 py-4 text-left text-xl rounded-lg border-2 transition-all focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 focus:ring-offset-[#fafafa] ${
                 localSelection === option.value
-                  ? 'border-[#33E1ED] bg-[#33E1ED]/10 text-[#33E1ED]'
-                  : 'border-gray-700 bg-[#1a1a1a] text-white hover:border-gray-600'
+                  ? 'border-[#059669] bg-[#059669]/10 text-[#059669]'
+                  : 'border-gray-300 bg-white text-[#121212] hover:border-gray-400'
               }`}
               aria-pressed={localSelection === option.value}
             >
-              <div className="font-semibold">{option.label}</div>
+              <div className="font-bold">{option.label}</div>
               {option.description && (
-                <div className="text-sm text-gray-400 mt-1">{option.description}</div>
+                <div className="text-base text-gray-600 mt-1">{option.description}</div>
               )}
             </button>
           ))}
@@ -67,7 +67,8 @@ export default function QuestionnaireStep({
           {step > 1 && (
             <button
               onClick={onBack}
-              className="flex-1 min-h-[48px] px-6 py-3 bg-gray-800 text-white font-semibold text-lg rounded-lg hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 focus:ring-offset-[#121212]"
+              className="w-[40%] min-h-[64px] px-6 py-4 bg-gray-200 text-[#121212] font-bold text-xl rounded-lg hover:bg-gray-300 active:bg-gray-400 transition-colors focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-[#fafafa] shadow-lg"
+              aria-label="Go back"
             >
               Back
             </button>
@@ -75,11 +76,12 @@ export default function QuestionnaireStep({
           <button
             onClick={handleNext}
             disabled={!localSelection}
-            className={`flex-1 min-h-[48px] px-6 py-3 font-semibold text-lg rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#121212] ${
+            className={`${step > 1 ? 'w-[40%] ml-auto' : 'w-full'} min-h-[64px] px-6 py-4 font-bold text-xl rounded-lg transition-colors focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-[#fafafa] shadow-lg ${
               localSelection
-                ? 'bg-[#33E1ED] text-[#121212] hover:bg-[#2AC5D0] focus:ring-[#33E1ED]'
-                : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                ? 'bg-[#059669] text-white hover:bg-[#047857] active:bg-[#065f46] focus:ring-[#059669]'
+                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
+            aria-label={isLastStep ? 'Finish onboarding' : 'Next step'}
           >
             {isLastStep ? 'Finish' : 'Next'}
           </button>

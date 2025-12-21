@@ -5,6 +5,8 @@ import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Workout from './pages/Workout';
+import WorkoutPlans from './pages/WorkoutPlans';
+import CustomWorkout from './pages/CustomWorkout';
 import Success from './pages/Success';
 import './App.css';
 
@@ -16,8 +18,8 @@ function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
-        <div className="text-[#33E1ED] text-xl">Loading...</div>
+      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
+        <div className="text-[#059669] text-xl">Loading...</div>
       </div>
     );
   }
@@ -64,6 +66,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Workout />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workout-plans"
+        element={
+          <ProtectedRoute>
+            <WorkoutPlans />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/custom-workout"
+        element={
+          <ProtectedRoute>
+            <CustomWorkout />
           </ProtectedRoute>
         }
       />
