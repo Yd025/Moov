@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
+import Profile from './pages/Profile';
 import Workout from './pages/Workout';
 import Success from './pages/Success';
 import './App.css';
@@ -47,6 +48,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Home />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />

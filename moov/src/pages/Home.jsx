@@ -68,8 +68,34 @@ export default function Home() {
     navigate('/workout', { state: { exercises: [exercise] } });
   };
 
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
   return (
-    <div className="min-h-screen bg-[#121212] text-white p-6">
+    <div className="min-h-screen bg-[#121212] text-white p-6 relative">
+      {/* Profile Button - Top Right */}
+      <button
+        onClick={handleProfileClick}
+        className="absolute top-6 right-6 p-3 bg-[#1a1a1a] border border-gray-800 rounded-lg hover:bg-[#2a2a2a] hover:border-[#33E1ED] transition-colors focus:outline-none focus:ring-2 focus:ring-[#33E1ED] focus:ring-offset-2 focus:ring-offset-[#121212]"
+        aria-label="Profile"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6 text-[#33E1ED]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </svg>
+      </button>
+
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center mb-8">
