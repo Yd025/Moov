@@ -110,3 +110,106 @@ export function isExerciseSuitable(exercise, userProfile) {
   return true;
 }
 
+/**
+ * Generates a daily workout plan filtered by user profile
+ * @param {Object} userProfile - User's mobility profile and constraints
+ * @param {Array} workoutPlans - Full list of available workout plans
+ * @returns {Object|null} Filtered workout plan suitable for the user
+ */
+export function generateDailyWorkoutPlan(userProfile, workoutPlans) {
+  if (!userProfile || !workoutPlans || workoutPlans.length === 0) {
+    return null;
+  }
+
+  let filteredPlans = [...workoutPlans];
+
+  // Filter out plans that require standing if user uses wheelchair
+  if (userProfile.mobility === 'wheelchair') {
+    filteredPlans = filteredPlans.filter(plan => {
+      if (plan.tags && plan.tags.includes('requires_standing')) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  // Filter by constraint area if specified
+  if (userProfile.constraint) {
+    const constraintLower = userProfile.constraint.toLowerCase();
+    
+    // Prefer plans that match the user's focus area
+    if (constraintLower.includes('upper')) {
+      filteredPlans = filteredPlans.filter(plan => {
+        // Keep plans that focus on upper body or full body
+        return plan.focusArea === 'upper_body' || plan.focusArea === 'full_body' || plan.focusArea === 'hands_grip';
+      });
+    }
+    
+    if (constraintLower.includes('lower')) {
+      filteredPlans = filteredPlans.filter(plan => {
+        // Keep plans that focus on lower body or full body
+        return plan.focusArea === 'lower_body' || plan.focusArea === 'full_body';
+      });
+    }
+    
+    if (constraintLower.includes('hand') || constraintLower.includes('grip')) {
+      filteredPlans = filteredPlans.filter(plan => {
+        // Keep plans that focus on hands/grip
+        return plan.focusArea === 'hands_grip' || plan.focusArea === 'upper_body';
+      });
+    }
+  }
+
+  // Filter by mobility aid
+  if (userProfile.mobilityAid) {
+    const aid = userProfile.mobilityAid.toLowerCase();
+    
+    if (aid === 'walker' || aid === 'cane') {
+      // Remove plans that require both hands free
+      filteredPlans = filteredPlans.filter(plan => {
+        if (plan.tags && plan.tags.includes('requires_both_hands_free')) {
+          return false;
+        }
+        return true;
+      });
+    }
+  }
+
+  // Apply senior mode adjustments if enabled
+  if (userProfile.ageFactor === 'senior') {
+    // Prefer beginner difficulty plans
+    filteredPlans = filteredPlans.filter(plan => {
+      if (plan.tags && plan.tags.includes('high_intensity')) {
+        return false;
+      }
+      return plan.difficulty === 'beginner';
+    });
+  }
+
+  // If no plans match, return null
+  if (filteredPlans.length === 0) {
+    return null;
+  }
+
+  // Shuffle and select one plan for daily workout
+  const shuffled = filteredPlans.sort(() => Math.random() - 0.5);
+  return shuffled[0];
+}
+
+/**
+ * Validates if a workout plan is suitable for a user profile
+ * @param {Object} workoutPlan - Workout plan object to validate
+ * @param {Object} userProfile - User's mobility profile
+ * @returns {boolean} True if workout plan is suitable
+ */
+export function isWorkoutPlanSuitable(workoutPlan, userProfile) {
+  if (!workoutPlan || !userProfile) return false;
+
+  // Check wheelchair constraint
+  if (userProfile.mobility === 'wheelchair' && workoutPlan.tags?.includes('requires_standing')) {
+    return false;
+  }
+
+  return true;
+}
+

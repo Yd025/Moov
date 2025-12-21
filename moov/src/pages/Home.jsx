@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import WorkoutCard from '../components/dashboard/WorkoutCard';
+import WorkoutPlanCard from '../components/dashboard/WorkoutPlanCard';
 import ProgressChart from '../components/dashboard/ProgressChart';
-import { generateDailyMoov } from '../logic/filterEngine';
+import { generateDailyWorkoutPlan } from '../logic/filterEngine';
+import { workoutPlans } from '../logic/workoutPlans';
 import { exercises } from '../logic/exerciseDB';
+import { expandWorkoutPlan } from '../logic/workoutPlans';
 // TODO: Import Firebase functions
 // import { doc, getDoc } from 'firebase/firestore';
 // import { db } from '../config/firebase';
@@ -15,7 +17,8 @@ import { exercises } from '../logic/exerciseDB';
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [todayWorkout, setTodayWorkout] = useState([]);
+  const [todayWorkoutPlan, setTodayWorkoutPlan] = useState(null);
+  const [todayWorkoutExercises, setTodayWorkoutExercises] = useState([]);
   const [progressData, setProgressData] = useState(null);
 
   useEffect(() => {
@@ -45,9 +48,17 @@ export default function Home() {
             ageFactor: 'standard',
           };
 
-      // Generate daily workout using filter engine
-      const dailyWorkout = generateDailyMoov(profile, exercises);
-      setTodayWorkout(dailyWorkout);
+      // Generate daily workout plan using filter engine
+      const dailyPlan = generateDailyWorkoutPlan(profile, workoutPlans);
+      if (dailyPlan) {
+        setTodayWorkoutPlan(dailyPlan);
+        // Expand the workout plan into full exercise objects
+        const planExercises = expandWorkoutPlan(dailyPlan, exercises);
+        setTodayWorkoutExercises(planExercises);
+      } else {
+        setTodayWorkoutPlan(null);
+        setTodayWorkoutExercises([]);
+      }
 
       // TODO: Load progress data from Firestore
       // For now, use mock data
@@ -61,11 +72,9 @@ export default function Home() {
   };
 
   const handleStartWorkout = () => {
-    navigate('/workout', { state: { exercises: todayWorkout } });
-  };
-
-  const handleStartExercise = (exercise) => {
-    navigate('/workout', { state: { exercises: [exercise] } });
+    if (todayWorkoutExercises.length > 0) {
+      navigate('/workout', { state: { exercises: todayWorkoutExercises } });
+    }
   };
 
   const handleProfileClick = () => {
@@ -106,36 +115,24 @@ export default function Home() {
         {/* Today's Moov Section */}
         <section>
           <h2 className="text-2xl font-bold mb-6">Today's Moov</h2>
-          {todayWorkout.length > 0 ? (
-            <div className="space-y-4 mb-6">
-              {todayWorkout.map((exercise, index) => (
-                <WorkoutCard
-                  key={exercise.id}
-                  exercise={exercise}
-                  index={index}
-                  onStart={handleStartExercise}
-                />
-              ))}
+          {todayWorkoutPlan ? (
+            <div className="mb-6">
+              <WorkoutPlanCard
+                workoutPlan={todayWorkoutPlan}
+                exercises={todayWorkoutExercises}
+                onStart={handleStartWorkout}
+              />
             </div>
           ) : (
             <div className="bg-[#1a1a1a] rounded-lg p-6 border border-gray-800 text-center">
-              <p className="text-gray-400 text-lg mb-4">No workout generated yet</p>
+              <p className="text-gray-400 text-lg mb-4">No workout plan generated yet</p>
               <button
                 onClick={loadUserData}
                 className="min-h-[48px] px-6 py-3 bg-[#33E1ED] text-[#121212] font-semibold text-lg rounded-lg hover:bg-[#2AC5D0] transition-colors"
               >
-                Generate Workout
+                Generate Workout Plan
               </button>
             </div>
-          )}
-          
-          {todayWorkout.length > 0 && (
-            <button
-              onClick={handleStartWorkout}
-              className="w-full min-h-[48px] px-6 py-3 bg-[#33E1ED] text-[#121212] font-bold text-xl rounded-lg hover:bg-[#2AC5D0] transition-colors focus:outline-none focus:ring-2 focus:ring-[#33E1ED] focus:ring-offset-2 focus:ring-offset-[#121212]"
-            >
-              Start Daily Moov
-            </button>
           )}
         </section>
 
