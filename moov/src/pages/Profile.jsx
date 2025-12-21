@@ -131,18 +131,18 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white p-6">
+    <div className="min-h-screen bg-[#fafafa] text-[#121212] p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => navigate('/home')}
-            className="p-2 hover:bg-[#1a1a1a] rounded-lg transition-colors"
+            className="min-h-[64px] min-w-[64px] p-4 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 focus:ring-offset-[#fafafa] shadow-sm"
             aria-label="Back to home"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-[#33E1ED]"
+              className="h-6 w-6 text-[#059669]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -155,16 +155,16 @@ export default function Profile() {
               />
             </svg>
           </button>
-          <h1 className="text-3xl font-bold text-[#33E1ED]">Profile</h1>
+          <h1 className="text-3xl font-bold text-[#059669]">Profile</h1>
           <div className="w-10"></div> {/* Spacer for centering */}
         </div>
 
         {/* Account Information */}
-        <section className="bg-[#1a1a1a] rounded-lg p-6 border border-gray-800">
-          <h2 className="text-xl font-bold mb-4 text-[#33E1ED]">Account Information</h2>
+        <section className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+          <h2 className="text-xl font-bold mb-4 text-[#059669]">Account Information</h2>
           <div className="space-y-3">
             <div>
-              <p className="text-sm text-gray-400">Email</p>
+              <p className="text-sm text-gray-600">Email</p>
               <p className="text-lg">{user?.email || 'Not available'}</p>
             </div>
             {user?.displayName && (
@@ -177,13 +177,14 @@ export default function Profile() {
         </section>
 
         {/* Profile Information */}
-        <section className="bg-[#1a1a1a] rounded-lg p-6 border border-gray-800">
+        <section className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-[#33E1ED]">Profile Settings</h2>
+            <h2 className="text-xl font-bold text-[#059669]">Profile Settings</h2>
             {!isEditing && userProfile && (
               <button
                 onClick={handleEdit}
-                className="px-4 py-2 bg-[#33E1ED] text-[#121212] font-semibold rounded-lg hover:bg-[#2AC5D0] transition-colors"
+                className="w-[40%] min-h-[64px] px-6 py-4 bg-[#059669] text-white font-bold text-xl rounded-lg hover:bg-[#047857] active:bg-[#065f46] transition-colors focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 focus:ring-offset-white shadow-lg"
+                aria-label="Edit profile"
               >
                 Edit
               </button>
@@ -192,10 +193,11 @@ export default function Profile() {
 
           {!userProfile ? (
             <div className="text-center py-8">
-              <p className="text-gray-400 mb-4">No profile found. Complete onboarding to set up your profile.</p>
+              <p className="text-gray-600 mb-4">No profile found. Complete onboarding to set up your profile.</p>
               <button
                 onClick={() => navigate('/onboarding')}
-                className="px-6 py-3 bg-[#33E1ED] text-[#121212] font-semibold rounded-lg hover:bg-[#2AC5D0] transition-colors"
+                className="w-[40%] min-h-[64px] px-6 py-4 bg-[#059669] text-white font-bold text-xl rounded-lg hover:bg-[#047857] active:bg-[#065f46] transition-colors focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 focus:ring-offset-white shadow-lg mx-auto"
+                aria-label="Complete onboarding"
               >
                 Complete Onboarding
               </button>
@@ -204,13 +206,13 @@ export default function Profile() {
             <div className="space-y-6">
               {/* Mobility Aid */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mobility Aid
                 </label>
                 <select
                   value={editedProfile.mobilityAid}
                   onChange={(e) => setEditedProfile({ ...editedProfile, mobilityAid: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#121212] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#33E1ED] focus:border-transparent"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-[#121212] focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent"
                 >
                   <option value="none">None</option>
                   <option value="wheelchair">Wheelchair</option>
@@ -221,13 +223,13 @@ export default function Profile() {
 
               {/* Constraint */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Focus Area
                 </label>
                 <select
                   value={editedProfile.constraint}
                   onChange={(e) => setEditedProfile({ ...editedProfile, constraint: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#121212] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#33E1ED] focus:border-transparent"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-[#121212] focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent"
                 >
                   <option value="upper_body">Upper Body</option>
                   <option value="lower_body">Lower Body</option>
@@ -238,13 +240,13 @@ export default function Profile() {
 
               {/* Age Factor */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mode
                 </label>
                 <select
                   value={editedProfile.ageFactor}
                   onChange={(e) => setEditedProfile({ ...editedProfile, ageFactor: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#121212] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#33E1ED] focus:border-transparent"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-[#121212] focus:outline-none focus:ring-2 focus:ring-[#059669] focus:border-transparent"
                 >
                   <option value="standard">Standard Mode</option>
                   <option value="senior">Senior Mode</option>
@@ -255,13 +257,15 @@ export default function Profile() {
               <div className="flex gap-4 pt-4">
                 <button
                   onClick={handleCancel}
-                  className="flex-1 px-6 py-3 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
+                  className="w-[40%] min-h-[64px] px-6 py-4 bg-gray-200 text-[#121212] font-bold text-xl rounded-lg hover:bg-gray-300 active:bg-gray-400 transition-colors focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-white shadow-lg"
+                  aria-label="Cancel editing"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
-                  className="flex-1 px-6 py-3 bg-[#33E1ED] text-[#121212] font-semibold rounded-lg hover:bg-[#2AC5D0] transition-colors"
+                  className="w-[40%] min-h-[64px] px-6 py-4 bg-[#059669] text-white font-bold text-xl rounded-lg hover:bg-[#047857] active:bg-[#065f46] transition-colors focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 focus:ring-offset-white shadow-lg ml-auto"
+                  aria-label="Save changes"
                 >
                   Save Changes
                 </button>
@@ -288,7 +292,8 @@ export default function Profile() {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+          className="w-full min-h-[64px] px-6 py-4 bg-red-600 text-white font-bold text-xl rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#fafafa] shadow-lg"
+          aria-label="Logout"
         >
           Logout
         </button>

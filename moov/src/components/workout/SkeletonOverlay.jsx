@@ -10,11 +10,11 @@ export default function SkeletonOverlay({ formQuality, formFeedback }) {
       <div
         className={`p-4 rounded-lg ${
           formQuality === 'good'
-            ? 'bg-[#33E1ED]/20 border border-[#33E1ED]'
+            ? 'bg-[#059669]/20 border border-[#059669]'
             : 'bg-red-500/20 border border-red-500'
         }`}
       >
-        <p className="text-white text-lg font-semibold">{formFeedback}</p>
+        <p className="text-[#121212] text-lg font-semibold">{formFeedback}</p>
       </div>
     </div>
   );
