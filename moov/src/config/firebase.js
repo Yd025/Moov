@@ -1,7 +1,6 @@
 // Firebase Configuration
-// TODO: Replace with your Firebase config
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -19,6 +18,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const googleAuthProvider = new GoogleAuthProvider();
 
 export default app;
 

@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoginButton from '../components/auth/LoginButton';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 /**
  * Login Page - Entry point for authentication
@@ -10,41 +12,45 @@ import LoginButton from '../components/auth/LoginButton';
 export default function Login() {
   const navigate = useNavigate();
   const { user, signInWithGoogle } = useAuth();
+  const [error, setError] = useState(null);
+
+  // Helper function to check if user profile exists in Firestore
+  const checkUserProfile = async (userId) => {
+    try {
+      const userDocRef = doc(db, 'users', userId);
+      const userDocSnap = await getDoc(userDocRef);
+      return userDocSnap.exists();
+    } catch (error) {
+      console.error('Error checking user profile:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     // If user is already authenticated, check if they've completed onboarding
     if (user) {
-      // TODO: Check Firestore for user profile
-      // const userProfile = await getDoc(doc(db, 'users', user.uid));
-      // If profile exists, redirect to Home
-      // If no profile, redirect to Onboarding
-      
-      // Mock: Check localStorage for user profile
-      const userProfile = localStorage.getItem('moov_userProfile');
-      if (userProfile) {
-        navigate('/home');
-      } else {
-        navigate('/onboarding');
-      }
+      const redirectUser = async () => {
+        const hasProfile = await checkUserProfile(user.uid);
+        if (hasProfile) {
+          navigate('/home');
+        } else {
+          navigate('/onboarding');
+        }
+      };
+      redirectUser();
     }
   }, [user, navigate]);
 
   const handleSignIn = async () => {
     try {
-      // TODO: Implement Firebase Google Sign In
+      setError(null);
       await signInWithGoogle();
       
       // After sign in, check Firestore for user profile
-      // Navigate to onboarding if new user, home if existing
-      // Mock: Check localStorage
-      const userProfile = localStorage.getItem('moov_userProfile');
-      if (userProfile) {
-        navigate('/home');
-      } else {
-        navigate('/onboarding');
-      }
+      // The useEffect will handle navigation based on profile existence
     } catch (error) {
       console.error('Sign in failed:', error);
+      setError(error.message || 'Failed to sign in. Please try again.');
     }
   };
 
@@ -60,11 +66,13 @@ export default function Login() {
         {/* Sign In Button */}
         <div className="space-y-4">
           <LoginButton onSignIn={handleSignIn} />
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
           <p className="text-sm text-gray-600">
             Sign in to track your workouts and progress
-          </p>
-          <p className="text-xs text-gray-600 mt-4">
-            (Mock Mode: Click to continue without Firebase)
           </p>
         </div>
       </div>

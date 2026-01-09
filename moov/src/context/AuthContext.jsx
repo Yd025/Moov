@@ -1,7 +1,12 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-// TODO: Import Firebase Auth
-// import { auth } from '../config/firebase';
-// import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
+import { auth, googleAuthProvider } from '../config/firebase';
+import { 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
+} from 'firebase/auth';
 
 const AuthContext = createContext(null);
 
@@ -13,45 +18,19 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Set up Firebase auth state listener
-    // const unsubscribe = onAuthStateChanged(auth, (user) => {
-    //   setUser(user);
-    //   setLoading(false);
-    // });
-    // return () => unsubscribe();
+    // Set up Firebase auth state listener
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
 
-    // Mock: Check localStorage for existing user session
-    const storedUser = localStorage.getItem('moov_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem('moov_user');
-      }
-    }
-    setLoading(false);
+    return () => unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
     try {
-      // TODO: Implement Firebase Google Sign In
-      // const provider = new GoogleAuthProvider();
-      // const result = await signInWithPopup(auth, provider);
-      // return result.user;
-      
-      // Mock: Create a mock user object
-      const mockUser = {
-        uid: 'mock-user-' + Date.now(),
-        email: 'user@example.com',
-        displayName: 'Mock User',
-        photoURL: null,
-      };
-      
-      // Store in localStorage for persistence
-      localStorage.setItem('moov_user', JSON.stringify(mockUser));
-      setUser(mockUser);
-      
-      return mockUser;
+      const result = await signInWithPopup(auth, googleAuthProvider);
+      return result.user;
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
@@ -60,15 +39,29 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      // TODO: Implement Firebase Sign Out
-      // await signOut(auth);
-      
-      // Mock: Clear localStorage
-      localStorage.removeItem('moov_user');
-      localStorage.removeItem('moov_userProfile');
-      setUser(null);
+      await signOut(auth);
     } catch (error) {
       console.error('Logout error:', error);
+      throw error;
+    }
+  };
+
+  const signInWithEmail = async (email, password) => {
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      return result.user;
+    } catch (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    }
+  };
+
+  const signUpWithEmail = async (email, password) => {
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      return result.user;
+    } catch (error) {
+      console.error('Sign up error:', error);
       throw error;
     }
   };
@@ -77,6 +70,8 @@ export function AuthProvider({ children }) {
     user,
     loading,
     signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
     logout,
   };
 
