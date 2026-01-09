@@ -12,6 +12,9 @@ export const exercises = [
     tags: ['upper_body', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 60, // seconds
+    targetAngle: 160, // degrees (elbow angle when arm is raised)
+    angleRange: 10, // ±10 degrees tolerance
+    referenceVideoUrl: null, // placeholder
   },
   {
     id: 'shoulder_rolls',
@@ -21,6 +24,9 @@ export const exercises = [
     tags: ['upper_body', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 90, // degrees (shoulder angle during roll)
+    angleRange: 15, // ±15 degrees tolerance
+    referenceVideoUrl: null,
   },
   {
     id: 'neck_stretches',
@@ -30,6 +36,9 @@ export const exercises = [
     tags: ['upper_body', 'seated', 'wheelchair_friendly', 'stretching'],
     difficulty: 'beginner',
     duration: 90,
+    targetAngle: 45, // degrees (head rotation angle)
+    angleRange: 10,
+    referenceVideoUrl: null,
   },
   {
     id: 'seated_twists',
@@ -39,6 +48,9 @@ export const exercises = [
     tags: ['core', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 45, // degrees (torso rotation angle)
+    angleRange: 10,
+    referenceVideoUrl: null,
   },
   {
     id: 'leg_lifts',
@@ -48,6 +60,9 @@ export const exercises = [
     tags: ['lower_body', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 160, // degrees (knee angle when leg is lifted)
+    angleRange: 10,
+    referenceVideoUrl: null,
   },
   {
     id: 'ankle_circles',
@@ -57,6 +72,9 @@ export const exercises = [
     tags: ['lower_body', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 90, // degrees (ankle angle during circle)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'squats',
@@ -66,6 +84,9 @@ export const exercises = [
     tags: ['lower_body', 'requires_standing', 'requires_both_hands_free'],
     difficulty: 'intermediate',
     duration: 90,
+    targetAngle: 90, // degrees (knee angle at bottom of squat)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'wall_pushups',
@@ -75,6 +96,9 @@ export const exercises = [
     tags: ['upper_body', 'requires_standing', 'requires_grip'],
     difficulty: 'intermediate',
     duration: 90,
+    targetAngle: 90, // degrees (elbow angle at bottom of push-up)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'marching_in_place',
@@ -84,6 +108,9 @@ export const exercises = [
     tags: ['lower_body', 'requires_standing', 'requires_both_hands_free'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 90, // degrees (knee angle when lifted)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'hand_squeezes',
@@ -93,6 +120,9 @@ export const exercises = [
     tags: ['upper_body', 'seated', 'wheelchair_friendly', 'hands'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 45, // degrees (wrist angle during squeeze)
+    angleRange: 20,
+    referenceVideoUrl: null,
   },
   {
     id: 'wrist_flexes',
@@ -102,6 +132,9 @@ export const exercises = [
     tags: ['upper_body', 'seated', 'wheelchair_friendly', 'hands'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 90, // degrees (wrist flexion angle)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'deep_breathing',
@@ -111,6 +144,9 @@ export const exercises = [
     tags: ['wellness', 'seated', 'wheelchair_friendly', 'stretching'],
     difficulty: 'beginner',
     duration: 120,
+    targetAngle: 0, // degrees (not applicable for breathing)
+    angleRange: 0,
+    referenceVideoUrl: null,
   },
   // Leg exercises
   {
@@ -121,6 +157,9 @@ export const exercises = [
     tags: ['lower_body', 'requires_standing', 'requires_both_hands_free'],
     difficulty: 'intermediate',
     duration: 120,
+    targetAngle: 90, // degrees (knee angle at bottom of lunge)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'calf_raises',
@@ -130,6 +169,9 @@ export const exercises = [
     tags: ['lower_body', 'requires_standing', 'requires_both_hands_free'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 180, // degrees (ankle angle when raised)
+    angleRange: 10,
+    referenceVideoUrl: null,
   },
   {
     id: 'leg_extensions',
@@ -139,6 +181,9 @@ export const exercises = [
     tags: ['lower_body', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 90,
+    targetAngle: 180, // degrees (knee angle when extended)
+    angleRange: 10,
+    referenceVideoUrl: null,
   },
   {
     id: 'side_leg_raises',
@@ -148,6 +193,9 @@ export const exercises = [
     tags: ['lower_body', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 160, // degrees (hip angle when leg is raised)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   // Arm exercises
   {
@@ -158,6 +206,9 @@ export const exercises = [
     tags: ['upper_body', 'arms', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 90,
+    targetAngle: 45, // degrees (elbow angle when curled)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'tricep_dips',
@@ -167,6 +218,9 @@ export const exercises = [
     tags: ['upper_body', 'arms', 'requires_standing'],
     difficulty: 'intermediate',
     duration: 90,
+    targetAngle: 90, // degrees (elbow angle at bottom of dip)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'arm_circles',
@@ -176,6 +230,9 @@ export const exercises = [
     tags: ['upper_body', 'arms', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 90, // degrees (shoulder angle during circle)
+    angleRange: 20,
+    referenceVideoUrl: null,
   },
   {
     id: 'pushups',
@@ -185,6 +242,9 @@ export const exercises = [
     tags: ['upper_body', 'arms', 'requires_standing'],
     difficulty: 'intermediate',
     duration: 90,
+    targetAngle: 90, // degrees (elbow angle at bottom of push-up)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   // Back exercises
   {
@@ -195,6 +255,9 @@ export const exercises = [
     tags: ['back', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 90,
+    targetAngle: 170, // degrees (back extension angle)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'superman',
@@ -204,6 +267,9 @@ export const exercises = [
     tags: ['back', 'requires_standing'],
     difficulty: 'intermediate',
     duration: 90,
+    targetAngle: 45, // degrees (back extension angle)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'shoulder_blade_squeezes',
@@ -213,6 +279,9 @@ export const exercises = [
     tags: ['back', 'seated', 'wheelchair_friendly'],
     difficulty: 'beginner',
     duration: 60,
+    targetAngle: 0, // degrees (not applicable)
+    angleRange: 0,
+    referenceVideoUrl: null,
   },
   {
     id: 'rows',
@@ -222,6 +291,9 @@ export const exercises = [
     tags: ['back', 'requires_standing'],
     difficulty: 'intermediate',
     duration: 90,
+    targetAngle: 90, // degrees (elbow angle during row)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   // Core/Abdomen exercises
   {
@@ -232,6 +304,9 @@ export const exercises = [
     tags: ['core', 'abdomen', 'requires_standing'],
     difficulty: 'beginner',
     duration: 90,
+    targetAngle: 45, // degrees (torso angle during crunch)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'plank',
@@ -241,6 +316,9 @@ export const exercises = [
     tags: ['core', 'abdomen', 'requires_standing'],
     difficulty: 'intermediate',
     duration: 30,
+    targetAngle: 180, // degrees (straight line angle)
+    angleRange: 10,
+    referenceVideoUrl: null,
   },
   {
     id: 'leg_raises',
@@ -250,6 +328,9 @@ export const exercises = [
     tags: ['core', 'abdomen', 'requires_standing'],
     difficulty: 'intermediate',
     duration: 90,
+    targetAngle: 90, // degrees (hip angle when legs are raised)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'bicycle_crunches',
@@ -259,6 +340,9 @@ export const exercises = [
     tags: ['core', 'abdomen', 'requires_standing'],
     difficulty: 'intermediate',
     duration: 90,
+    targetAngle: 90, // degrees (knee angle during crunch)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
   {
     id: 'dead_bug',
@@ -268,6 +352,9 @@ export const exercises = [
     tags: ['core', 'abdomen', 'requires_standing'],
     difficulty: 'beginner',
     duration: 90,
+    targetAngle: 180, // degrees (limb extension angle)
+    angleRange: 15,
+    referenceVideoUrl: null,
   },
 ];
 
