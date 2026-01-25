@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-// TODO: Import Firebase functions
-// import { doc, getDoc, setDoc } from 'firebase/firestore';
-// import { db } from '../config/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 /**
  * Profile Page - Display and edit user profile information
@@ -30,15 +29,9 @@ export default function Profile() {
 
   const loadProfile = async () => {
     try {
-      // TODO: Load user profile from Firestore
-      // const userDoc = await getDoc(doc(db, 'users', user.uid));
-      // const profile = userDoc.data();
-      
-      // Mock: Load from localStorage
-      const storedProfile = localStorage.getItem('moov_userProfile');
-      const profile = storedProfile 
-        ? JSON.parse(storedProfile)
-        : null;
+      // Load user profile from Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const profile = userDoc.exists() ? userDoc.data() : null;
       
       setUserProfile(profile);
       if (profile) {
@@ -70,24 +63,24 @@ export default function Profile() {
 
   const handleSave = async () => {
     try {
-      // TODO: Save to Firestore
-      // await setDoc(doc(db, 'users', user.uid), {
-      //   ...editedProfile,
-      //   mobility: editedProfile.mobilityAid === 'wheelchair' ? 'wheelchair' : 'mobile',
-      //   updatedAt: new Date(),
-      // });
-
-      // Mock: Save to localStorage
-      const profileToSave = {
+      // Save updated preferences to Firestore
+      await setDoc(doc(db, 'users', user.uid), {
         ...editedProfile,
         mobility: editedProfile.mobilityAid === 'wheelchair' ? 'wheelchair' : 'mobile',
-        createdAt: userProfile?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      // Update local state with the saved profile
+      const profileToSave = {
+        ...userProfile,
+        ...editedProfile,
+        mobility: editedProfile.mobilityAid === 'wheelchair' ? 'wheelchair' : 'mobile',
+        updatedAt: new Date(),
       };
-      localStorage.setItem('moov_userProfile', JSON.stringify(profileToSave));
       
       setUserProfile(profileToSave);
       setIsEditing(false);
+      console.log('User preferences updated in Firebase');
     } catch (error) {
       console.error('Error saving profile:', error);
     }

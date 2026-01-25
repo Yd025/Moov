@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import LoginButton from '../components/auth/LoginButton';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import LoginButton from '../components/auth/LoginButton';
 
 /**
  * Login Page - Entry point for authentication
@@ -15,14 +15,21 @@ export default function Login() {
   const [error, setError] = useState(null);
 
   // Helper function to check if user profile exists in Firestore
+  // Returns: { exists: boolean, firestoreAvailable: boolean }
   const checkUserProfile = async (userId) => {
     try {
       const userDocRef = doc(db, 'users', userId);
       const userDocSnap = await getDoc(userDocRef);
-      return userDocSnap.exists();
+      return { exists: userDocSnap.exists(), firestoreAvailable: true };
     } catch (error) {
       console.error('Error checking user profile:', error);
-      return false;
+      // Handle Firestore errors - offline or permission issues
+      const isOfflineError = error.message?.includes('offline') || 
+                             error.code === 'unavailable';
+      const isPermissionError = error.code === 'permission-denied' ||
+                                error.message?.includes('permissions');
+      // If permission denied, user profile likely doesn't exist yet
+      return { exists: false, firestoreAvailable: !isOfflineError && !isPermissionError };
     }
   };
 
@@ -30,8 +37,12 @@ export default function Login() {
     // If user is already authenticated, check if they've completed onboarding
     if (user) {
       const redirectUser = async () => {
-        const hasProfile = await checkUserProfile(user.uid);
-        if (hasProfile) {
+        const { exists, firestoreAvailable } = await checkUserProfile(user.uid);
+        if (!firestoreAvailable) {
+          // Firestore not available - go to home and let it handle errors there
+          console.warn('Firestore unavailable, redirecting to home');
+          navigate('/home');
+        } else if (exists) {
           navigate('/home');
         } else {
           navigate('/onboarding');
@@ -44,10 +55,21 @@ export default function Login() {
   const handleSignIn = async () => {
     try {
       setError(null);
-      await signInWithGoogle();
+      const signedInUser = await signInWithGoogle();
       
-      // After sign in, check Firestore for user profile
-      // The useEffect will handle navigation based on profile existence
+      // Navigate immediately using the returned user instead of waiting for state update
+      if (signedInUser) {
+        const { exists, firestoreAvailable } = await checkUserProfile(signedInUser.uid);
+        if (!firestoreAvailable) {
+          // Firestore not available - go to home and let it handle errors there
+          console.warn('Firestore unavailable, redirecting to home');
+          navigate('/home');
+        } else if (exists) {
+          navigate('/home');
+        } else {
+          navigate('/onboarding');
+        }
+      }
     } catch (error) {
       console.error('Sign in failed:', error);
       setError(error.message || 'Failed to sign in. Please try again.');

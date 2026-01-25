@@ -7,9 +7,8 @@ import { generateDailyWorkoutPlan } from '../logic/filterEngine';
 import { workoutPlans } from '../logic/workoutPlans';
 import { exercises } from '../logic/exerciseDB';
 import { expandWorkoutPlan } from '../logic/workoutPlans';
-// TODO: Import Firebase functions
-// import { doc, getDoc } from 'firebase/firestore';
-// import { db } from '../config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 /**
  * Home Dashboard Page - Displays today's workout and progress
@@ -33,20 +32,18 @@ export default function Home() {
 
   const loadUserData = async () => {
     try {
-      // TODO: Load user profile from Firestore
-      // const userDoc = await getDoc(doc(db, 'users', user.uid));
-      // const profile = userDoc.data();
+      // Load user profile from Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      let profile;
       
-      // Mock: Load from localStorage
-      const storedProfile = localStorage.getItem('moov_userProfile');
-      const profile = storedProfile 
-        ? JSON.parse(storedProfile)
-        : {
-            mobility: 'wheelchair',
-            mobilityAid: 'wheelchair',
-            constraint: 'upper_body',
-            ageFactor: 'standard',
-          };
+      if (userDoc.exists()) {
+        profile = userDoc.data();
+      } else {
+        // No profile found - redirect to onboarding
+        console.log('No user profile found, redirecting to onboarding');
+        navigate('/onboarding');
+        return;
+      }
 
       // Generate daily workout plan using filter engine
       const dailyPlan = generateDailyWorkoutPlan(profile, workoutPlans);

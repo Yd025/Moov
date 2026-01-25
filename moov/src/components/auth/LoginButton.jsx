@@ -9,13 +9,15 @@ export default function LoginButton({ onSignIn }) {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implement Firebase Google Sign In
-      // This will be connected to Firebase Auth in the AuthContext
       if (onSignIn) {
         await onSignIn();
+      } else {
+        console.error('onSignIn callback not provided');
       }
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('Sign in error in LoginButton:', error);
+      // Re-throw to let parent component handle error display
+      throw error;
     } finally {
       setIsLoading(false);
     }

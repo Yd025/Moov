@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import QuestionnaireStep from '../components/onboarding/QuestionnaireStep';
-// TODO: Import Firebase functions
-// import { doc, setDoc } from 'firebase/firestore';
-// import { db } from '../config/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 /**
  * Onboarding Page - Multi-step questionnaire to configure user profile
@@ -81,22 +80,17 @@ export default function Onboarding() {
 
   const finishOnboarding = async () => {
     try {
-      // TODO: Save to Firestore
-      // await setDoc(doc(db, 'users', user.uid), {
-      //   ...userProfile,
-      //   mobility: userProfile.mobilityAid === 'wheelchair' ? 'wheelchair' : 'mobile',
-      //   createdAt: new Date(),
-      //   updatedAt: new Date(),
-      // });
-
-      // Mock: Save to localStorage
-      const profileToSave = {
+      // Save user preferences to Firestore
+      await setDoc(doc(db, 'users', user.uid), {
         ...userProfile,
         mobility: userProfile.mobilityAid === 'wheelchair' ? 'wheelchair' : 'mobile',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('moov_userProfile', JSON.stringify(profileToSave));
+        email: user.email,
+        displayName: user.displayName || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      console.log('User preferences saved to Firebase');
 
       // Navigate to home
       navigate('/home');

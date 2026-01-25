@@ -29,11 +29,34 @@ export function AuthProvider({ children }) {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('Attempting Google sign in...');
+      console.log('Auth instance:', auth);
+      console.log('Google provider:', googleAuthProvider);
+      
       const result = await signInWithPopup(auth, googleAuthProvider);
+      console.log('Sign in successful:', result.user);
       return result.user;
     } catch (error) {
-      console.error('Sign in error:', error);
-      throw error;
+      console.error('Sign in error details:', {
+        code: error.code,
+        message: error.message,
+        email: error.email,
+        credential: error.credential,
+        fullError: error
+      });
+      
+      // Provide more helpful error messages
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in popup was closed. Please try again.');
+      } else if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup was blocked by your browser. Please allow popups for this site.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        throw new Error('This domain is not authorized. Please check Firebase configuration.');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        throw new Error('Google sign-in is not enabled. Please enable it in Firebase Console.');
+      } else {
+        throw new Error(error.message || 'Failed to sign in with Google. Please try again.');
+      }
     }
   };
 
