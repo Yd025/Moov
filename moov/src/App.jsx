@@ -3,10 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
-import Profile from './pages/Profile';
 import Workout from './pages/Workout';
-import WorkoutPlans from './pages/WorkoutPlans';
-import CustomWorkout from './pages/CustomWorkout';
 import Success from './pages/Success';
 import './App.css';
 
@@ -19,7 +16,10 @@ function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
-        <div className="text-[#059669] text-xl">Loading...</div>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#059669] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="text-[#059669] text-xl font-semibold">Loading...</div>
+        </div>
       </div>
     );
   }
@@ -54,34 +54,10 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/workout"
         element={
           <ProtectedRoute>
             <Workout />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/workout-plans"
-        element={
-          <ProtectedRoute>
-            <WorkoutPlans />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/custom-workout"
-        element={
-          <ProtectedRoute>
-            <CustomWorkout />
           </ProtectedRoute>
         }
       />

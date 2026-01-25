@@ -6,17 +6,16 @@ export default function SkeletonOverlay({ formQuality, formFeedback }) {
   if (!formFeedback) return null;
 
   return (
-    <div className="absolute top-4 left-4 right-4 z-10">
+    <div className="absolute top-24 left-4 right-4 z-10">
       <div
-        className={`p-4 rounded-lg ${
+        className={`p-4 rounded-xl shadow-lg ${
           formQuality === 'good'
-            ? 'bg-[#059669]/20 border border-[#059669]'
-            : 'bg-red-500/20 border border-red-500'
+            ? 'bg-[#059669]/90 border border-[#059669]'
+            : 'bg-red-500/90 border border-red-500'
         }`}
       >
-        <p className="text-[#121212] text-lg font-semibold">{formFeedback}</p>
+        <p className="text-white text-lg font-semibold text-center">{formFeedback}</p>
       </div>
     </div>
   );
 }
-
