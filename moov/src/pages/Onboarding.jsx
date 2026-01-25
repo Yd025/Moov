@@ -7,6 +7,8 @@ import CalibrationScreen from '../components/onboarding/CalibrationScreen';
 // TODO: Import Firebase functions
 // import { doc, setDoc } from 'firebase/firestore';
 // import { db } from '../config/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 /**
  * Onboarding Page - Multi-step questionnaire to configure user profile
@@ -166,6 +168,17 @@ export default function Onboarding() {
       
       // Mock: Save to localStorage
       localStorage.setItem('moov_userProfile', JSON.stringify(profileToSave));
+      // Save user preferences to Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        ...userProfile,
+        mobility: userProfile.mobilityAid === 'wheelchair' ? 'wheelchair' : 'mobile',
+        email: user.email,
+        displayName: user.displayName || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      console.log('User preferences saved to Firebase');
 
       // Navigate to home
       navigate('/home');

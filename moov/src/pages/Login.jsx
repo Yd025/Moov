@@ -1,6 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import LoginButton from '../components/auth/LoginButton';
 
 /**
@@ -10,41 +12,67 @@ import LoginButton from '../components/auth/LoginButton';
 export default function Login() {
   const navigate = useNavigate();
   const { user, signInWithGoogle } = useAuth();
+  const [error, setError] = useState(null);
+
+  // Helper function to check if user profile exists in Firestore
+  // Returns: { exists: boolean, firestoreAvailable: boolean }
+  const checkUserProfile = async (userId) => {
+    try {
+      const userDocRef = doc(db, 'users', userId);
+      const userDocSnap = await getDoc(userDocRef);
+      return { exists: userDocSnap.exists(), firestoreAvailable: true };
+    } catch (error) {
+      console.error('Error checking user profile:', error);
+      // Handle Firestore errors - offline or permission issues
+      const isOfflineError = error.message?.includes('offline') || 
+                             error.code === 'unavailable';
+      const isPermissionError = error.code === 'permission-denied' ||
+                                error.message?.includes('permissions');
+      // If permission denied, user profile likely doesn't exist yet
+      return { exists: false, firestoreAvailable: !isOfflineError && !isPermissionError };
+    }
+  };
 
   useEffect(() => {
     // If user is already authenticated, check if they've completed onboarding
     if (user) {
-      // TODO: Check Firestore for user profile
-      // const userProfile = await getDoc(doc(db, 'users', user.uid));
-      // If profile exists, redirect to Home
-      // If no profile, redirect to Onboarding
-      
-      // Mock: Check localStorage for user profile
-      const userProfile = localStorage.getItem('moov_userProfile');
-      if (userProfile) {
-        navigate('/home');
-      } else {
-        navigate('/onboarding');
-      }
+      const redirectUser = async () => {
+        const { exists, firestoreAvailable } = await checkUserProfile(user.uid);
+        if (!firestoreAvailable) {
+          // Firestore not available - go to home and let it handle errors there
+          console.warn('Firestore unavailable, redirecting to home');
+          navigate('/home');
+        } else if (exists) {
+          navigate('/home');
+        } else {
+          navigate('/onboarding');
+        }
+      };
+      redirectUser();
     }
   }, [user, navigate]);
 
   const handleSignIn = async () => {
     try {
-      // TODO: Implement Firebase Google Sign In
-      await signInWithGoogle();
+      setError(null);
+      const signedInUser = await signInWithGoogle();
       
-      // After sign in, check Firestore for user profile
-      // Navigate to onboarding if new user, home if existing
-      // Mock: Check localStorage
-      const userProfile = localStorage.getItem('moov_userProfile');
-      if (userProfile) {
-        navigate('/home');
-      } else {
-        navigate('/onboarding');
+      // Navigate immediately using the returned user instead of waiting for state update
+      if (signedInUser) {
+        const { exists, firestoreAvailable } = await checkUserProfile(signedInUser.uid);
+        if (!firestoreAvailable) {
+          // Firestore not available - go to home and let it handle errors there
+          console.warn('Firestore unavailable, redirecting to home');
+          navigate('/home');
+        } else if (exists) {
+          navigate('/home');
+        } else {
+          navigate('/onboarding');
+        }
       }
     } catch (error) {
       console.error('Sign in failed:', error);
+      setError(error.message || 'Failed to sign in. Please try again.');
     }
   };
 
@@ -60,11 +88,13 @@ export default function Login() {
         {/* Sign In Button */}
         <div className="space-y-4">
           <LoginButton onSignIn={handleSignIn} />
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
           <p className="text-sm text-gray-600">
             Sign in to track your workouts and progress
-          </p>
-          <p className="text-xs text-gray-600 mt-4">
-            (Mock Mode: Click to continue without Firebase)
           </p>
         </div>
       </div>

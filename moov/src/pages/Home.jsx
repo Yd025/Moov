@@ -5,9 +5,9 @@ import WorkoutCard from '../components/dashboard/WorkoutCard';
 import ProgressChart from '../components/dashboard/ProgressChart';
 import { generateDailyMoov } from '../logic/filterEngine';
 import { exercises } from '../logic/exerciseDB';
-// TODO: Import Firebase functions
-// import { doc, getDoc } from 'firebase/firestore';
-// import { db } from '../config/firebase';
+import { expandWorkoutPlan } from '../logic/workoutPlans';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 /**
  * Home Dashboard Page - Displays today's workout and progress
@@ -31,9 +31,9 @@ export default function Home() {
 
   const loadUserData = async () => {
     try {
-      // TODO: Load user profile from Firestore
-      // const userDoc = await getDoc(doc(db, 'users', user.uid));
-      // const profile = userDoc.data();
+      // Load user profile from Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      let profile;
       
       // Mock: Load from localStorage
       const storedProfile = localStorage.getItem('moov_userProfile');
@@ -54,6 +54,14 @@ export default function Home() {
             mobility: 'seated',
             mobilityAid: 'sitting',
           };
+      if (userDoc.exists()) {
+        profile = userDoc.data();
+      } else {
+        // No profile found - redirect to onboarding
+        console.log('No user profile found, redirecting to onboarding');
+        navigate('/onboarding');
+        return;
+      }
 
       setUserProfile(profile);
 
