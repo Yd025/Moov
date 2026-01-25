@@ -3,16 +3,22 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 /**
  * Moov Assistant Hook - The "Brain" of the workout
  * Manages verbal cues, struggle detection, and user guidance during exercises
+ * @param {Object} options - Configuration options
+ * @param {boolean} options.isFormGood - Current form quality status
+ * @param {number} options.repCount - Current rep count
  */
-export function useMoovAssistant() {
+export function useMoovAssistant({ isFormGood = true, repCount = 0 } = {}) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showSkipButton, setShowSkipButton] = useState(false);
   const [struggleTimer, setStruggleTimer] = useState(0);
   const [currentCue, setCurrentCue] = useState('');
   
   const struggleTimerRef = useRef(null);
+  const formCorrectionTimerRef = useRef(null);
   const speechSynthesisRef = useRef(null);
   const lastRepTimeRef = useRef(Date.now());
+  const lastRepCountRef = useRef(0);
+  const badFormStartTimeRef = useRef(null);
 
   // Initialize speech synthesis
   useEffect(() => {
@@ -85,7 +91,7 @@ export function useMoovAssistant() {
   }, []);
 
   /**
-   * Starts monitoring for struggle (no rep for 10 seconds)
+   * Starts monitoring for struggle (no rep for 12 seconds)
    */
   const startStruggleMonitoring = useCallback(() => {
     // Clear any existing timer
@@ -96,15 +102,17 @@ export function useMoovAssistant() {
     struggleTimerRef.current = setInterval(() => {
       const timeSinceLastRep = (Date.now() - lastRepTimeRef.current) / 1000;
       
-      if (timeSinceLastRep > 10) {
+      if (timeSinceLastRep > 12) {
         setStruggleTimer(timeSinceLastRep);
-        setShowSkipButton(true);
-        speak("Do you want to skip this move?");
+        if (!showSkipButton) {
+          setShowSkipButton(true);
+          speak("This looks tough. Do you want to skip this move?");
+        }
       } else {
         setStruggleTimer(timeSinceLastRep);
       }
     }, 1000);
-  }, [speak]);
+  }, [speak, showSkipButton]);
 
   /**
    * Stops struggle monitoring
@@ -157,7 +165,10 @@ export function useMoovAssistant() {
    */
   const countRep = useCallback((currentRep, totalReps) => {
     if (currentRep <= totalReps) {
-      speak(currentRep.toString(), 1, 1.2);
+      // Convert number to words for better speech
+      const repWords = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+      const repText = currentRep <= 10 ? `${repWords[currentRep - 1]}!` : `${currentRep}!`;
+      speak(repText, 1, 1.2);
     }
     if (currentRep === totalReps) {
       setTimeout(() => {
@@ -166,11 +177,61 @@ export function useMoovAssistant() {
     }
   }, [speak]);
 
+  // Monitor form quality and provide corrections after 3 seconds
+  useEffect(() => {
+    if (!isFormGood) {
+      // Start tracking bad form time
+      if (badFormStartTimeRef.current === null) {
+        badFormStartTimeRef.current = Date.now();
+      }
+      
+      // Check if bad form has persisted for more than 3 seconds
+      if (formCorrectionTimerRef.current) {
+        clearTimeout(formCorrectionTimerRef.current);
+      }
+      
+      formCorrectionTimerRef.current = setTimeout(() => {
+        const timeInBadForm = Date.now() - badFormStartTimeRef.current;
+        if (timeInBadForm >= 3000 && !isFormGood) {
+          // Provide form correction
+          giveFormCorrection("Straighten your arm and keep your form correct");
+        }
+      }, 3000);
+    } else {
+      // Form is good, reset tracking
+      badFormStartTimeRef.current = null;
+      if (formCorrectionTimerRef.current) {
+        clearTimeout(formCorrectionTimerRef.current);
+        formCorrectionTimerRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (formCorrectionTimerRef.current) {
+        clearTimeout(formCorrectionTimerRef.current);
+      }
+    };
+  }, [isFormGood]); // Removed giveFormCorrection from deps to avoid re-running
+
+  // Auto-count reps when repCount increases
+  useEffect(() => {
+    if (repCount > lastRepCountRef.current && repCount > 0) {
+      // Rep count increased, automatically count it
+      const repWords = ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+      const repText = repCount <= 10 ? `${repWords[repCount - 1]}!` : `${repCount}!`;
+      speak(repText, 1, 1.2);
+      lastRepCountRef.current = repCount;
+    }
+  }, [repCount, speak]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopStruggleMonitoring();
       stopSpeaking();
+      if (formCorrectionTimerRef.current) {
+        clearTimeout(formCorrectionTimerRef.current);
+      }
     };
   }, [stopStruggleMonitoring, stopSpeaking]);
 

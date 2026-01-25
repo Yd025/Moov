@@ -6,7 +6,7 @@ export default function AssistantAvatar({ isSpeaking, onClick }) {
     <div className="flex flex-col items-center gap-2">
       <button
         onClick={onClick}
-        className={`relative w-16 h-16 rounded-full bg-[#059669] flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-[#059669] focus:ring-offset-2 focus:ring-offset-[#fafafa] ${
+        className={`relative w-16 h-16 rounded-full bg-[#059669] flex items-center justify-center transition-all focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 shadow-lg ${
           isSpeaking ? 'animate-pulse scale-110' : ''
         }`}
         aria-label="Moov Assistant"
@@ -25,8 +25,7 @@ export default function AssistantAvatar({ isSpeaking, onClick }) {
           />
         </svg>
       </button>
-      <span className="text-[#121212] text-sm font-medium">Moov Assistant</span>
+      <span className="text-[#121212] text-sm font-medium bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">Moov Assistant</span>
     </div>
   );
 }
-
