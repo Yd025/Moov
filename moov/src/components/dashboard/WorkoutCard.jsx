@@ -19,8 +19,6 @@ export default function WorkoutCard({ exercise, onStart, index }) {
           <span className="font-medium">{exercise.reps} reps</span>
           <span>•</span>
           <span>{exercise.duration}s</span>
-          <span>•</span>
-          <span className="capitalize">{exercise.difficulty}</span>
         </div>
         <button
           onClick={() => onStart && onStart(exercise)}
