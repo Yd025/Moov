@@ -35,25 +35,6 @@ export default function Home() {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       let profile;
       
-      // Mock: Load from localStorage
-      const storedProfile = localStorage.getItem('moov_userProfile');
-      const profile = storedProfile 
-        ? JSON.parse(storedProfile)
-        : {
-            // Default profile matching new onboarding structure
-            movementPosition: 'sitting',
-            wheelchairTransfer: '',
-            assistiveGear: [],
-            overheadRange: 'full',
-            asymmetryConfig: '',
-            gripStrength: 'strong',
-            energyFlow: 'standard',
-            redZones: [],
-            movementBox: null,
-            // Legacy compatibility
-            mobility: 'seated',
-            mobilityAid: 'sitting',
-          };
       if (userDoc.exists()) {
         profile = userDoc.data();
       } else {
@@ -142,10 +123,7 @@ export default function Home() {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  localStorage.removeItem('moov_userProfile');
-                  navigate('/onboarding');
-                }}
+                onClick={() => navigate('/profile')}
                 className="text-[#059669] hover:underline text-sm font-medium"
               >
                 Update Profile
