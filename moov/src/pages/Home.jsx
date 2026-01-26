@@ -5,7 +5,8 @@ import WorkoutCard from '../components/dashboard/WorkoutCard';
 import ProgressChart from '../components/dashboard/ProgressChart';
 import { generateDailyMoov } from '../logic/filterEngine';
 import { exercises } from '../logic/exerciseDB';
-import { expandWorkoutPlan } from '../logic/workoutPlans';
+import { generateExercisesForProfile } from '../logic/exerciseTemplates';
+import { generatePersonalizedExercises, isGeminiAvailable, explainWorkout } from '../services/geminiService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -18,6 +19,9 @@ export default function Home() {
   const [todayWorkout, setTodayWorkout] = useState([]);
   const [progressData, setProgressData] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [workoutSource, setWorkoutSource] = useState('template'); // 'template', 'ai', 'legacy'
+  const [workoutExplanation, setWorkoutExplanation] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -29,8 +33,9 @@ export default function Home() {
     loadUserData();
   }, [user, navigate]);
 
-  const loadUserData = async () => {
+  const loadUserData = async (useAI = false) => {
     try {
+      setIsLoading(true);
       let profile;
 
       // Check if user is a guest
@@ -62,9 +67,39 @@ export default function Home() {
 
       setUserProfile(profile);
 
-      // Generate daily workout using filter engine
-      const dailyWorkout = generateDailyMoov(profile, exercises);
+      // Generate workout based on method
+      let dailyWorkout = [];
+      let source = 'legacy';
+
+      if (useAI && isGeminiAvailable()) {
+        // Try AI-generated exercises (with Gemini)
+        try {
+          console.log('Generating AI-powered exercises...');
+          dailyWorkout = await generatePersonalizedExercises(profile, 5);
+          source = 'ai';
+          
+          // Get workout explanation
+          const explanation = await explainWorkout(dailyWorkout, profile);
+          setWorkoutExplanation(explanation);
+        } catch (aiError) {
+          console.error('AI generation failed, falling back to templates:', aiError);
+          dailyWorkout = generateExercisesForProfile(profile, 5);
+          source = 'template';
+        }
+      } else {
+        // Use template-based generation (no API needed)
+        dailyWorkout = generateExercisesForProfile(profile, 5);
+        source = 'template';
+        
+        // If template generation returns empty, fall back to legacy filter
+        if (dailyWorkout.length === 0) {
+          dailyWorkout = generateDailyMoov(profile, exercises);
+          source = 'legacy';
+        }
+      }
+
       setTodayWorkout(dailyWorkout);
+      setWorkoutSource(source);
 
       // TODO: Load progress data from Firestore
       // For now, use mock data
@@ -74,6 +109,8 @@ export default function Home() {
       });
     } catch (error) {
       console.error('Error loading user data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -182,17 +219,57 @@ export default function Home() {
 
         {/* Today's Moov Section */}
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Today's Moov</h2>
-            <button
-              onClick={loadUserData}
-              className="text-[#059669] hover:underline text-sm font-medium"
-            >
-              Refresh
-            </button>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold">Today's Moov</h2>
+              {workoutSource && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    workoutSource === 'ai' 
+                      ? 'bg-purple-100 text-purple-700' 
+                      : workoutSource === 'template'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {workoutSource === 'ai' ? 'AI Personalized' : 
+                     workoutSource === 'template' ? 'Smart Template' : 'Standard'}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {isGeminiAvailable() && (
+                <button
+                  onClick={() => loadUserData(true)}
+                  disabled={isLoading}
+                  className="text-purple-600 hover:underline text-sm font-medium disabled:opacity-50"
+                >
+                  {isLoading ? 'Generating...' : 'Try AI'}
+                </button>
+              )}
+              <button
+                onClick={() => loadUserData(false)}
+                disabled={isLoading}
+                className="text-[#059669] hover:underline text-sm font-medium disabled:opacity-50"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
-          {todayWorkout.length > 0 ? (
+          {/* Workout explanation from AI */}
+          {workoutExplanation && workoutSource === 'ai' && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-purple-800">{workoutExplanation}</p>
+            </div>
+          )}
+
+          {isLoading ? (
+            <div className="bg-white rounded-lg p-8 border border-gray-200 text-center shadow-sm">
+              <div className="w-12 h-12 border-4 border-[#059669] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Generating your personalized workout...</p>
+            </div>
+          ) : todayWorkout.length > 0 ? (
             <div className="space-y-4 mb-6">
               {todayWorkout.map((exercise, index) => (
                 <WorkoutCard
