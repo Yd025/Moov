@@ -37,7 +37,7 @@ const STEPS = {
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [currentStep, setCurrentStep] = useState(STEPS.MOVEMENT_BASELINE);
   const [stepNumber, setStepNumber] = useState(1);
   
@@ -165,20 +165,26 @@ export default function Onboarding() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      
-      // Mock: Save to localStorage
-      localStorage.setItem('moov_userProfile', JSON.stringify(profileToSave));
-      // Save user preferences to Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        ...userProfile,
-        mobility: userProfile.mobilityAid === 'wheelchair' ? 'wheelchair' : 'mobile',
-        email: user.email,
-        displayName: user.displayName || null,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
 
-      console.log('User preferences saved to Firebase');
+      // Check if user is a guest
+      if (isGuest || user?.isGuest) {
+        // Guest mode: Save to localStorage only
+        profileToSave.isGuest = true;
+        localStorage.setItem('moov_guest_profile', JSON.stringify(profileToSave));
+        console.log('Guest profile saved to localStorage');
+      } else {
+        // Authenticated user: Save to Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+          ...userProfile,
+          movementBox: movementBox || null,
+          mobility: userProfile.movementPosition === 'wheelchair' ? 'wheelchair' : 'mobile',
+          email: user.email,
+          displayName: user.displayName || null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        console.log('User preferences saved to Firebase');
+      }
 
       // Navigate to home
       navigate('/home');

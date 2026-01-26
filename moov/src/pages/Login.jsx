@@ -11,7 +11,7 @@ import LoginButton from '../components/auth/LoginButton';
  */
 export default function Login() {
   const navigate = useNavigate();
-  const { user, signInWithGoogle } = useAuth();
+  const { user, signInWithGoogle, continueAsGuest, isGuest } = useAuth();
   const [error, setError] = useState(null);
 
   // Helper function to check if user profile exists in Firestore
@@ -36,6 +36,17 @@ export default function Login() {
   useEffect(() => {
     // If user is already authenticated, check if they've completed onboarding
     if (user) {
+      // Guest users: check if they have a profile in localStorage
+      if (user.isGuest || isGuest) {
+        const guestProfile = localStorage.getItem('moov_guest_profile');
+        if (guestProfile) {
+          navigate('/home');
+        } else {
+          navigate('/onboarding');
+        }
+        return;
+      }
+
       const redirectUser = async () => {
         const { exists, firestoreAvailable } = await checkUserProfile(user.uid);
         if (!firestoreAvailable) {
@@ -50,7 +61,7 @@ export default function Login() {
       };
       redirectUser();
     }
-  }, [user, navigate]);
+  }, [user, isGuest, navigate]);
 
   const handleSignIn = async () => {
     try {
@@ -76,6 +87,18 @@ export default function Login() {
     }
   };
 
+  const handleGuestLogin = () => {
+    try {
+      setError(null);
+      continueAsGuest();
+      // Guest users go through onboarding to customize their profile
+      navigate('/onboarding');
+    } catch (error) {
+      console.error('Guest login failed:', error);
+      setError('Failed to continue as guest. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md space-y-12 text-center">
@@ -85,16 +108,34 @@ export default function Login() {
           <p className="text-xl text-gray-600">Accessible Fitness for Everyone</p>
         </div>
 
-        {/* Sign In Button */}
+        {/* Sign In Buttons */}
         <div className="space-y-4">
           <LoginButton onSignIn={handleSignIn} />
+          
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-[#fafafa] text-gray-500">or</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleGuestLogin}
+            className="w-full min-h-[64px] px-6 py-4 bg-gray-200 text-[#121212] font-bold text-xl rounded-lg hover:bg-gray-300 active:bg-gray-400 transition-colors focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-[#fafafa] shadow-lg"
+          >
+            Continue as Guest
+          </button>
+
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
+          
           <p className="text-sm text-gray-600">
-            Sign in to track your workouts and progress
+            Sign in to save your progress, or continue as guest to try the app
           </p>
         </div>
       </div>

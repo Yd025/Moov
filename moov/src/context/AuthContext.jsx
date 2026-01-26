@@ -16,11 +16,30 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
+    // Check for existing guest session
+    const guestUser = localStorage.getItem('moov_guest_user');
+    if (guestUser) {
+      try {
+        const parsedGuest = JSON.parse(guestUser);
+        setUser(parsedGuest);
+        setIsGuest(true);
+        setLoading(false);
+        return; // Don't set up Firebase listener for guest
+      } catch (e) {
+        localStorage.removeItem('moov_guest_user');
+      }
+    }
+
     // Set up Firebase auth state listener
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      // Only update if not in guest mode
+      if (!localStorage.getItem('moov_guest_user')) {
+        setUser(firebaseUser);
+        setIsGuest(false);
+      }
       setLoading(false);
     });
 
@@ -60,8 +79,44 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * Continue as Guest - Creates a mock user without Firebase auth
+   * Guest data is stored in localStorage only
+   * Note: Guest profile is NOT created here - user goes through onboarding
+   */
+  const continueAsGuest = () => {
+    const guestUser = {
+      uid: 'guest-' + Date.now(),
+      email: null,
+      displayName: 'Guest User',
+      photoURL: null,
+      isGuest: true,
+    };
+
+    // Store guest user in localStorage (profile will be created during onboarding)
+    localStorage.setItem('moov_guest_user', JSON.stringify(guestUser));
+    // Clear any existing guest profile so they go through onboarding
+    localStorage.removeItem('moov_guest_profile');
+
+    setUser(guestUser);
+    setIsGuest(true);
+
+    console.log('Continuing as guest:', guestUser);
+    return { user: guestUser };
+  };
+
   const logout = async () => {
     try {
+      // Clear guest data if in guest mode
+      if (isGuest) {
+        localStorage.removeItem('moov_guest_user');
+        localStorage.removeItem('moov_guest_profile');
+        setUser(null);
+        setIsGuest(false);
+        return;
+      }
+
+      // Firebase sign out
       await signOut(auth);
     } catch (error) {
       console.error('Logout error:', error);
@@ -92,9 +147,11 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
+    isGuest,
     signInWithGoogle,
     signInWithEmail,
     signUpWithEmail,
+    continueAsGuest,
     logout,
   };
 

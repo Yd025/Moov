@@ -14,7 +14,7 @@ import { db } from '../config/firebase';
  */
 export default function Home() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isGuest } = useAuth();
   const [todayWorkout, setTodayWorkout] = useState([]);
   const [progressData, setProgressData] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -31,17 +31,33 @@ export default function Home() {
 
   const loadUserData = async () => {
     try {
-      // Load user profile from Firestore
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
       let profile;
-      
-      if (userDoc.exists()) {
-        profile = userDoc.data();
+
+      // Check if user is a guest
+      if (isGuest || user?.isGuest) {
+        // Load guest profile from localStorage
+        const guestProfile = localStorage.getItem('moov_guest_profile');
+        if (guestProfile) {
+          profile = JSON.parse(guestProfile);
+          console.log('Loaded guest profile:', profile);
+        } else {
+          // No guest profile found - redirect to onboarding
+          console.log('No guest profile found, redirecting to onboarding');
+          navigate('/onboarding');
+          return;
+        }
       } else {
-        // No profile found - redirect to onboarding
-        console.log('No user profile found, redirecting to onboarding');
-        navigate('/onboarding');
-        return;
+        // Load user profile from Firestore
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        
+        if (userDoc.exists()) {
+          profile = userDoc.data();
+        } else {
+          // No profile found - redirect to onboarding
+          console.log('No user profile found, redirecting to onboarding');
+          navigate('/onboarding');
+          return;
+        }
       }
 
       setUserProfile(profile);
@@ -118,17 +134,49 @@ export default function Home() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Your Profile</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gray-500">Your Profile</p>
+                    {(isGuest || user?.isGuest) && (
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                        Guest
+                      </span>
+                    )}
+                  </div>
                   <p className="font-semibold text-[#121212]">{getPositionLabel()}</p>
                 </div>
               </div>
-              <button
-                onClick={() => navigate('/profile')}
-                className="text-[#059669] hover:underline text-sm font-medium"
-              >
-                Update Profile
-              </button>
+              {(isGuest || user?.isGuest) ? (
+                <button
+                  onClick={() => navigate('/onboarding')}
+                  className="text-[#059669] hover:underline text-sm font-medium"
+                >
+                  Customize Profile
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="text-[#059669] hover:underline text-sm font-medium"
+                >
+                  Update Profile
+                </button>
+              )}
             </div>
+            {(isGuest || user?.isGuest) && (
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <p className="text-sm text-gray-500">
+                  Sign in to save your progress and sync across devices.{' '}
+                  <button
+                    onClick={() => {
+                      logout();
+                      navigate('/login');
+                    }}
+                    className="text-[#059669] hover:underline font-medium"
+                  >
+                    Sign in now
+                  </button>
+                </p>
+              </div>
+            )}
           </div>
         )}
 
