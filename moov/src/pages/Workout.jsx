@@ -1,22 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CameraFeed from '../components/workout/CameraFeed';
-import SkeletonOverlay from '../components/workout/SkeletonOverlay';
-import AssistantAvatar from '../components/workout/AssistantAvatar';
 import { useMoovAssistant } from '../hooks/useMoovAssistant';
 import { usePoseDetection } from '../hooks/usePoseDetection';
 import { getExerciseConfig, supportsAutoDetection } from '../logic/exerciseConfigs';
 import { createAdaptiveEngine } from '../logic/adaptiveEngine';
 
 /**
- * Workout Page - The core workout experience with camera, pose detection, and assistant
- * 
- * Features:
- * - Real-time camera pose detection with MediaPipe
- * - Automatic rep counting based on exercise config
- * - Adaptive difficulty adjustment
- * - Voice-guided workout experience
- * - Manual fallback for unsupported exercises
+ * Workout Page - Camera-focused workout experience with pose detection
  */
 export default function Workout() {
   const navigate = useNavigate();
@@ -32,23 +23,23 @@ export default function Workout() {
   
   // Camera state
   const [cameraEnabled, setCameraEnabled] = useState(false);
-  const [cameraError, setCameraError] = useState(null);
-  const [showManualButton, setShowManualButton] = useState(false);
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraErrorMessage, setCameraErrorMessage] = useState('');
+  const [manualMode, setManualMode] = useState(false);
   
   // Adaptive engine
   const [adaptiveEngine] = useState(() => createAdaptiveEngine({}));
-  const [currentAdjustment, setCurrentAdjustment] = useState(null);
 
   const currentExercise = exercises[currentExerciseIndex];
   const exerciseConfig = currentExercise ? getExerciseConfig(currentExercise.id) : null;
   const hasAutoDetection = currentExercise && supportsAutoDetection(currentExercise.id);
+  const progressPercent = currentExercise ? (repCount / currentExercise.reps) * 100 : 0;
 
   // Initialize Moov Assistant
   const {
     isSpeaking,
     showSkipButton,
     currentCue,
-    speak,
     startStruggleMonitoring,
     stopStruggleMonitoring,
     introduceExercise,
@@ -65,12 +56,11 @@ export default function Workout() {
     exerciseConfig,
   });
 
-  // Handle rep completion from pose detection
+  // Handle rep completion
   const handleRepComplete = useCallback((metrics = {}) => {
     const newRepCount = repCount + 1;
     setRepCount(newRepCount);
     
-    // Record in adaptive engine and get adjustments
     if (adaptiveEngine && currentExercise) {
       const adjustment = adaptiveEngine.recordRepPerformance({
         repTime: metrics.repTime || 2,
@@ -79,47 +69,32 @@ export default function Workout() {
         formScore: metrics.formScore || 1,
       });
       
-      setCurrentAdjustment(adjustment);
-      
-      // Update assistant with encouragement type
       if (adjustment.encouragementType) {
         setAdaptiveEncouragement(adjustment.encouragementType);
       }
       
-      // Speak adjustment cue if needed
       if (adjustment.suggestedCue && adjustment.encouragementType !== 'steady') {
         speakAdjustment(adjustment);
       }
     }
 
-    // Check if exercise is complete
     if (newRepCount >= currentExercise.reps) {
       handleExerciseComplete();
     }
   }, [repCount, currentExercise, adaptiveEngine, setAdaptiveEncouragement, speakAdjustment]);
 
-  // Handle form feedback from pose detection
+  // Handle form feedback
   const handleFormFeedback = useCallback((feedback, severity) => {
     if (feedback) {
       giveFormCorrection(feedback, severity);
     }
   }, [giveFormCorrection]);
 
-  // Handle performance updates from pose detection
-  const handlePerformanceUpdate = useCallback((performance) => {
-    // Could be used for real-time UI updates
-    console.log('Performance update:', performance);
-  }, []);
-
-  // Initialize Pose Detection with callbacks
+  // Initialize Pose Detection
   const {
     isDetecting,
     isLoading: cameraLoading,
-    error: poseError,
-    formQuality,
     formFeedback,
-    currentAngle,
-    repPhase,
     videoRef,
     canvasRef,
     startDetection,
@@ -128,9 +103,8 @@ export default function Workout() {
   } = usePoseDetection({
     exerciseId: currentExercise?.id,
     exerciseConfig,
-    onRepComplete: hasAutoDetection ? handleRepComplete : null,
+    onRepComplete: hasAutoDetection && !manualMode ? handleRepComplete : null,
     onFormFeedback: handleFormFeedback,
-    onPerformanceUpdate: handlePerformanceUpdate,
   });
 
   // Handle exercise completion
@@ -147,7 +121,6 @@ export default function Workout() {
         setCurrentExerciseIndex(prev => prev + 1);
       }, 5000);
     } else {
-      // Workout complete
       const duration = Math.round((Date.now() - workoutStartTime) / 1000 / 60);
       const summary = adaptiveEngine?.getSessionSummary() || {};
       
@@ -173,34 +146,28 @@ export default function Workout() {
       return;
     }
 
-    // Initialize adaptive engine for first exercise
     if (currentExercise && adaptiveEngine) {
       adaptiveEngine.startExercise(currentExercise);
     }
 
-    // Start camera after a short delay
+    // Try to start camera
     const timer = setTimeout(async () => {
-      if (hasAutoDetection) {
-        try {
-          const success = await startDetection();
-          if (success) {
-            setCameraEnabled(true);
-          } else {
-            setShowManualButton(true);
-          }
-        } catch (err) {
-          console.error('Failed to start camera:', err);
-          setCameraError(err.message);
-          setShowManualButton(true);
+      try {
+        const success = await startDetection();
+        if (success) {
+          setCameraEnabled(true);
+          introduceExercise(currentExercise);
+          startStruggleMonitoring();
+        } else {
+          // Camera failed - show modal
+          setCameraErrorMessage('Unable to access your camera. You can continue with manual rep counting.');
+          setShowCameraModal(true);
         }
-      } else {
-        // Exercise doesn't support auto detection
-        setShowManualButton(true);
+      } catch (err) {
+        console.error('Camera error:', err);
+        setCameraErrorMessage(err.message || 'Camera is currently unavailable. You can continue with manual rep counting.');
+        setShowCameraModal(true);
       }
-      
-      // Introduce exercise after camera starts
-      introduceExercise(currentExercise);
-      startStruggleMonitoring();
     }, 500);
 
     return () => {
@@ -214,35 +181,40 @@ export default function Workout() {
   // Handle exercise change
   useEffect(() => {
     if (currentExerciseIndex > 0 && currentExercise) {
-      // Reset state for new exercise
       setRepCount(0);
       resetTracking();
       
-      // Update adaptive engine
       if (adaptiveEngine) {
         adaptiveEngine.startExercise(currentExercise);
       }
       
-      // Check if new exercise supports auto detection
-      const newHasAutoDetection = supportsAutoDetection(currentExercise.id);
-      setShowManualButton(!newHasAutoDetection || !cameraEnabled);
-      
-      // Introduce new exercise
       introduceExercise(currentExercise);
       startStruggleMonitoring();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentExerciseIndex]);
 
-  // Handle manual rep completion (fallback)
+  // Continue with manual mode
+  const handleContinueManual = () => {
+    setShowCameraModal(false);
+    setManualMode(true);
+    introduceExercise(currentExercise);
+    startStruggleMonitoring();
+  };
+
+  // Exit from modal
+  const handleExitFromModal = () => {
+    setShowCameraModal(false);
+    stopDetection();
+    navigate('/home');
+  };
+
   const handleManualRep = () => {
     handleRepComplete({ formScore: 1 });
   };
 
-  // Skip current exercise
   const handleSkip = () => {
     stopStruggleMonitoring();
-    
     if (adaptiveEngine) {
       adaptiveEngine.recordSkippedExercise();
     }
@@ -253,44 +225,29 @@ export default function Workout() {
       setCurrentExerciseIndex(prev => prev + 1);
     } else {
       const duration = Math.round((Date.now() - workoutStartTime) / 1000 / 60);
-      navigate('/success', { 
-        state: { 
-          exercisesCompleted: currentExerciseIndex,
-          duration,
-        } 
-      });
+      navigate('/success', { state: { exercisesCompleted: currentExerciseIndex, duration } });
     }
   };
 
-  // Exit workout early
   const handleFinish = () => {
     stopStruggleMonitoring();
     stopDetection();
     navigate('/home');
   };
 
-  // Retry camera
-  const handleRetryCamera = async () => {
-    setCameraError(null);
-    try {
-      const success = await startDetection();
-      if (success) {
-        setCameraEnabled(true);
-        setShowManualButton(false);
-      }
-    } catch (err) {
-      setCameraError(err.message);
-    }
-  };
-
   // Workout complete screen
   if (workoutComplete) {
     return (
-      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center text-[#121212]">
-        <div className="text-center">
-          <h2 className="text-4xl font-bold text-[#059669] mb-4">Workout Complete!</h2>
-          <p className="text-xl text-gray-600">Redirecting...</p>
-          <div className="mt-8 w-16 h-16 border-4 border-[#059669] border-t-transparent rounded-full animate-spin mx-auto" />
+      <div className="min-h-screen bg-gradient-to-br from-[#059669] to-[#047857] flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/20 flex items-center justify-center">
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-4xl font-bold mb-4">Workout Complete!</h2>
+          <p className="text-xl text-white/80">Amazing work today!</p>
+          <div className="mt-8 w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
         </div>
       </div>
     );
@@ -301,159 +258,240 @@ export default function Workout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-[#121212] relative overflow-hidden">
-      {/* Camera Feed */}
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Camera Feed - Full Screen Background */}
       <div className="absolute inset-0">
-        {cameraEnabled && isDetecting ? (
+        {cameraEnabled && isDetecting && !manualMode ? (
           <CameraFeed
             videoRef={videoRef}
             canvasRef={canvasRef}
             isActive={isDetecting}
             isLoading={cameraLoading}
-            error={poseError}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-            <div className="text-center text-gray-500 p-6">
-              {cameraLoading ? (
-                <>
-                  <div className="w-16 h-16 border-4 border-[#059669] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                  <p className="text-lg">Starting camera...</p>
-                </>
-              ) : cameraError ? (
-                <>
-                  <svg className="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <p className="text-lg mb-2 text-red-500">{cameraError}</p>
-                  <button
-                    onClick={handleRetryCamera}
-                    className="mt-4 px-6 py-3 bg-[#059669] text-white rounded-lg hover:bg-[#047857] transition-colors"
-                  >
-                    Try Again
-                  </button>
-                </>
-              ) : (
-                <>
-                  <svg className="w-24 h-24 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <p className="text-lg mb-2">
-                    {hasAutoDetection ? 'Camera not available' : 'Manual tracking mode'}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    {hasAutoDetection 
-                      ? 'Use the button below to count your reps'
-                      : 'This exercise uses manual rep counting'}
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Overlay Content */}
-      <div className="relative z-10 h-screen flex flex-col">
-        {/* Top Bar - Counter & Exit */}
-        <div className="flex justify-between items-start p-6">
-          <div className="bg-white/95 backdrop-blur-sm rounded-xl px-6 py-4 shadow-lg border border-gray-200">
-            <div className="text-sm text-gray-500">
-              Exercise {currentExerciseIndex + 1} of {exercises.length}
-            </div>
-            <div className="text-lg font-bold text-[#121212] mb-1">
-              {currentExercise.name}
-            </div>
-            <div className="text-4xl font-bold text-[#059669]">
-              {repCount} / {currentExercise.reps}
+          // Placeholder when camera not active
+          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            {/* Decorative elements */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#059669]/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-[#059669]/5 rounded-full blur-2xl" />
             </div>
             
-            {/* Rep phase indicator (for debugging/feedback) */}
-            {isDetecting && repPhase !== 'neutral' && (
-              <div className="mt-2 text-xs text-gray-500">
-                Phase: <span className="font-medium capitalize">{repPhase}</span>
-                {currentAngle !== null && (
-                  <span className="ml-2">Angle: {Math.round(currentAngle)}°</span>
-                )}
+            {/* Manual mode indicator */}
+            {manualMode && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center opacity-20">
+                  <svg className="w-32 h-32 mx-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <p className="mt-4 text-lg">Manual Mode</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Dark gradient overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+      </div>
+
+      {/* Camera Unavailable Modal */}
+      {showCameraModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
+          <div className="bg-slate-800 rounded-2xl p-8 max-w-sm w-full shadow-2xl border border-slate-700">
+            {/* Icon */}
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" className="text-amber-400" />
+              </svg>
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-xl font-bold text-white text-center mb-2">
+              Camera Unavailable
+            </h3>
+            
+            {/* Message */}
+            <p className="text-slate-400 text-center mb-8">
+              {cameraErrorMessage}
+            </p>
+            
+            {/* Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={handleContinueManual}
+                className="w-full py-4 bg-[#059669] text-white font-semibold rounded-xl hover:bg-[#047857] transition-colors"
+              >
+                Continue Workout
+              </button>
+              <button
+                onClick={handleExitFromModal}
+                className="w-full py-4 bg-slate-700 text-slate-300 font-semibold rounded-xl hover:bg-slate-600 transition-colors"
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main UI Overlay */}
+      <div className="relative z-10 min-h-screen flex flex-col p-6">
+        {/* Top Bar */}
+        <div className="flex justify-between items-start">
+          {/* Exercise info */}
+          <div className="bg-black/40 backdrop-blur-md rounded-2xl px-5 py-4 border border-white/10">
+            <p className="text-[#059669] text-xs font-semibold uppercase tracking-wider mb-1">
+              Exercise {currentExerciseIndex + 1}/{exercises.length}
+            </p>
+            <h2 className="text-xl font-bold text-white">{currentExercise.name}</h2>
+          </div>
+          
+          {/* Exit button */}
+          <button
+            onClick={handleFinish}
+            className="w-12 h-12 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 hover:bg-white/10 transition-colors"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Center Content */}
+        <div className="flex-1 flex flex-col items-center justify-center">
+          {/* Rep Counter */}
+          <div className="relative mb-6">
+            {/* Progress ring */}
+            <svg className="w-48 h-48 transform -rotate-90">
+              <circle
+                cx="96"
+                cy="96"
+                r="88"
+                stroke="currentColor"
+                strokeWidth="6"
+                fill="transparent"
+                className="text-white/10"
+              />
+              <circle
+                cx="96"
+                cy="96"
+                r="88"
+                stroke="currentColor"
+                strokeWidth="6"
+                fill="transparent"
+                strokeLinecap="round"
+                className="text-[#059669] transition-all duration-500"
+                strokeDasharray={553}
+                strokeDashoffset={553 - (553 * progressPercent) / 100}
+              />
+            </svg>
+            
+            {/* Counter in center */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-5xl font-bold text-white">{repCount}</span>
+              <span className="text-white/40 text-sm mt-1">of {currentExercise.reps}</span>
+            </div>
+          </div>
+
+          {/* Form feedback */}
+          {formFeedback && (
+            <div className="mb-4 px-5 py-3 bg-amber-500/20 backdrop-blur-sm border border-amber-500/30 rounded-xl">
+              <p className="text-amber-300 text-center text-sm font-medium">{formFeedback}</p>
+            </div>
+          )}
+
+          {/* Current cue */}
+          {currentCue && (
+            <div className="mb-6 px-5 py-3 bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 max-w-xs">
+              <p className="text-white text-center text-sm">{currentCue}</p>
+            </div>
+          )}
+
+          {/* Manual Rep Button - Only show in manual mode */}
+          {manualMode && (
+            <button
+              onClick={handleManualRep}
+              className="group relative"
+            >
+              {/* Outer glow */}
+              <div className="absolute inset-0 bg-[#059669] rounded-full blur-xl opacity-40 group-hover:opacity-60 transition-opacity" />
+              
+              {/* Button */}
+              <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-[#059669] to-[#047857] flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-transform">
+                <div className="text-center">
+                  <svg className="w-8 h-8 mx-auto text-white mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="text-white font-bold text-sm">TAP</span>
+                </div>
+              </div>
+            </button>
+          )}
+
+          {/* Camera mode status */}
+          {cameraEnabled && isDetecting && !manualMode && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-[#059669]/20 backdrop-blur-sm rounded-full border border-[#059669]/30">
+              <div className="w-2 h-2 bg-[#059669] rounded-full animate-pulse" />
+              <span className="text-[#059669] text-sm font-medium">Tracking Active</span>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="flex justify-between items-end">
+          {/* Assistant indicator */}
+          <div className="flex items-center gap-3">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-[#059669] to-[#047857] flex items-center justify-center shadow-lg ${isSpeaking ? 'ring-4 ring-[#059669]/30' : ''}`}>
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            {isSpeaking && (
+              <div className="flex gap-1 items-end">
+                <div className="w-1 h-3 bg-[#059669] rounded-full animate-pulse" />
+                <div className="w-1 h-5 bg-[#059669] rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                <div className="w-1 h-3 bg-[#059669] rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
               </div>
             )}
           </div>
           
-          <button
-            onClick={handleFinish}
-            className="bg-white/95 backdrop-blur-sm rounded-xl px-6 py-3 text-gray-600 hover:bg-gray-100 hover:text-[#121212] transition-colors min-h-[48px] shadow-lg border border-gray-200 font-semibold"
-          >
-            Exit Workout
-          </button>
-        </div>
-
-        {/* Center - Form Feedback & Controls */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
-          {/* Form feedback overlay */}
-          <SkeletonOverlay formQuality={formQuality} formFeedback={formFeedback} />
+          {/* Mode indicator */}
+          <div className="text-center">
+            <span className="text-xs text-white/40">
+              {manualMode ? 'Manual Mode' : cameraEnabled ? 'Camera Mode' : ''}
+            </span>
+          </div>
           
-          {/* Current cue display */}
-          {currentCue && (
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl px-6 py-3 shadow-lg max-w-md text-center">
-              <p className="text-lg font-medium text-[#121212]">{currentCue}</p>
-            </div>
-          )}
-          
-          {/* Adaptive adjustment notification */}
-          {currentAdjustment?.recommendation && currentAdjustment.recommendation !== 'same' && (
-            <div className={`rounded-xl px-4 py-2 text-sm font-medium ${
-              currentAdjustment.recommendation === 'easier' 
-                ? 'bg-amber-100 text-amber-800' 
-                : 'bg-green-100 text-green-800'
-            }`}>
-              {currentAdjustment.recommendation === 'easier' 
-                ? 'Adjusting to easier movement' 
-                : 'Great job! Increasing challenge'}
-            </div>
-          )}
-          
-          {/* Manual rep button (fallback or for non-trackable exercises) */}
-          {(showManualButton || !hasAutoDetection || !cameraEnabled) && (
-            <button
-              onClick={handleManualRep}
-              className="min-h-[80px] px-12 py-6 bg-[#059669] text-white font-bold text-2xl rounded-2xl hover:bg-[#047857] active:bg-[#065f46] transition-colors focus:outline-none focus:ring-4 focus:ring-[#059669] focus:ring-offset-2 shadow-xl"
-            >
-              Complete Rep
-            </button>
-          )}
-          
-          {/* Instructions for camera mode */}
-          {cameraEnabled && isDetecting && hasAutoDetection && !showManualButton && (
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 text-center max-w-md">
-              <p className="text-sm text-gray-600">
-                Move through the full range of motion - reps are counted automatically!
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Bottom Bar - Assistant & Skip */}
-        <div className="flex justify-between items-end p-6">
-          <AssistantAvatar isSpeaking={isSpeaking} />
-          
+          {/* Skip button */}
           {showSkipButton && (
             <button
               onClick={handleSkip}
-              className="min-h-[64px] px-8 py-4 bg-red-500 text-white font-bold text-xl rounded-xl hover:bg-red-600 transition-all animate-pulse focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-offset-2 shadow-lg"
+              className="px-5 py-3 bg-red-500/20 backdrop-blur-sm border border-red-500/30 text-red-400 font-medium rounded-xl hover:bg-red-500/30 transition-all text-sm"
             >
-              Skip Move
+              Skip
             </button>
           )}
         </div>
 
-        {/* Rest Screen */}
+        {/* Rest Screen Overlay */}
         {isResting && (
-          <div className="absolute inset-0 bg-[#fafafa]/95 flex items-center justify-center z-20">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-20">
             <div className="text-center">
-              <h3 className="text-4xl font-bold text-[#059669] mb-4">Rest Time</h3>
-              <p className="text-xl text-gray-600">Take a moment to relax</p>
-              <p className="text-lg text-gray-500 mt-2">Next exercise coming up...</p>
-              <div className="mt-8 w-16 h-16 border-4 border-[#059669] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#059669]/20 flex items-center justify-center">
+                <svg className="w-10 h-10 text-[#059669]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-3xl font-bold text-white mb-2">Rest Time</h3>
+              <p className="text-white/50 mb-6">Great job! Take a breather.</p>
+              <p className="text-[#059669] font-medium">Next exercise coming up...</p>
+              <div className="mt-6 flex justify-center gap-2">
+                <div className="w-2 h-2 bg-[#059669] rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-[#059669] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-[#059669] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
             </div>
           </div>
         )}
